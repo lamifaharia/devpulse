@@ -1,7 +1,9 @@
 import app from "./app/app";
+import dotenv from "dotenv";
 
-// Changed from 5000 to 5001 to clear macOS port blocks
-const PORT = 5001;
+dotenv.config();
+
+const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

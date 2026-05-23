@@ -16,7 +16,6 @@ const getAllIssues = async (filters: any) => {
   const values: any[] = [];
   const constraints: string[] = [];
 
-  // Handle dynamic query filtering
   if (filters.type) {
     values.push(filters.type);
     constraints.push(`type = $${values.length}`);
@@ -30,7 +29,6 @@ const getAllIssues = async (filters: any) => {
     query += ` WHERE ` + constraints.join(" AND ");
   }
 
-  // Handle dynamic sorting
   const sortOrder = filters.sort === "oldest" ? "ASC" : "DESC";
   query += ` ORDER BY created_at ${sortOrder}`;
 
@@ -39,17 +37,14 @@ const getAllIssues = async (filters: any) => {
 
   if (issues.length === 0) return [];
 
-  // STITCHING STRATEGY (NO JOINs): Collect all unique reporter IDs
   const reporterIds = [...new Set(issues.map((issue: any) => issue.reporter_id))];
 
-  // Fetch users matching those IDs
   const usersResult = await pool.query(
     `SELECT id, name, role FROM users WHERE id = ANY($1)`,
     [reporterIds]
   );
   const usersMap = new Map(usersResult.rows.map((u: any) => [u.id, u]));
 
-  // Merge the user information into the issue profiles manually
   return issues.map((issue: any) => {
     const reporter = usersMap.get(issue.reporter_id);
     return {
@@ -89,13 +84,11 @@ const getSingleIssue = async (id: number) => {
 };
 
 const updateIssue = async (id: number, payload: any, user: any) => {
-  // Find the issue first to perform role validations
   const checkResult = await pool.query(`SELECT * FROM issues WHERE id = $1`, [id]);
   const issue = checkResult.rows[0];
 
   if (!issue) throw new Error("Issue not found");
 
-  // Enforce Contributor constraints
   if (user.role === "contributor") {
     if (issue.reporter_id !== user.id) {
       throw new Error("Forbidden: You can only update your own issues");
@@ -105,7 +98,6 @@ const updateIssue = async (id: number, payload: any, user: any) => {
     }
   }
 
-  // Fallback default assignments or status changes for maintainers
   const updatedTitle = payload.title || issue.title;
   const updatedDescription = payload.description || issue.description;
   const updatedType = payload.type || issue.type;

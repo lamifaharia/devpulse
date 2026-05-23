@@ -20,7 +20,6 @@ const signupUser = async (payload: any) => {
 };
 
 const loginUser = async (payload: any) => {
-  // 1. Check if the user exists by searching their unique email
   const query = `SELECT * FROM users WHERE email = $1`;
   const result = await pool.query(query, [payload.email]);
   const user = result.rows[0];
@@ -29,14 +28,12 @@ const loginUser = async (payload: any) => {
     throw new Error("Invalid email or password");
   }
 
-  // 2. Compare the raw request password with the hashed password in our database
   const isPasswordMatched = await bcrypt.compare(payload.password, user.password);
 
   if (!isPasswordMatched) {
     throw new Error("Invalid email or password");
   }
 
-  // 3. Generate a secure JWT using the secret key from your .env file
   const token = jwt.sign(
     {
       id: user.id,
@@ -49,7 +46,6 @@ const loginUser = async (payload: any) => {
     }
   );
 
-  // 4. Return the token along with user data (omitting the encrypted password string)
   return {
     token,
     user: {
